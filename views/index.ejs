@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e5ddd5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 500px;
+            height: 80%;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .navbar {
+            background-color: #25d366;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+        }
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+            color: darkgreen;
+        }
+        .message.user {
+            background-color: #dcf8c6;
+            align-self: flex-end;
+            color: rgb(83, 158, 65);
+
+        }
+        .message.system {
+            background-color: #f1f0f0;
+            font-style: italic;
+            align-self: center;
+        }
+        .input-container {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            background-color: #fff;
+        }
+        #message {
+            flex: 1;
+            border: 1px solid #25d366;
+            border-radius: 20px;
+            padding: 10px;
+        }
+        #sendBtn {
+            margin-left: 10px;
+            background-color: #25d366;
+            border: none;
+            color: white;
+            border-radius: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="navbar">
+            <div class="logo">MyChatApp</div>
+            <div class="nav-links">
+            </div>
+        </div>
+        <div class="messages" id="messages"></div>
+        <div class="input-container">
+            <input type="text" id="message" placeholder="Type a message">
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const sendBtn = document.getElementById("sendBtn");
+        const messageInput = document.getElementById("message");
+        const messagesContainer = document.getElementById("messages");
+
+        function promptForUsername() {
+            let username = prompt("Enter your name:");
+            while(!username) {
+                username = prompt("Enter your name");
+            }
+            return username;
+        }
+
+        let username = promptForUsername();
+        socket.emit('set-username', username);
+
+        socket.on("message", (data) => {
+            const { message, sender } = data;
+            const p = document.createElement("p");
+            p.innerText = `${sender}: ${message}`;
+            p.classList.add("message");
+            p.classList.add(sender === username ? "user" : "system");
+            messagesContainer.appendChild(p);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+
+        sendBtn.addEventListener("click", () => {
+            const message = messageInput.value.trim();
+            if (message) {
+                socket.emit("user-message", { message, sender: username });
+                messageInput.value = "";
+            }
+        });
+
+        messageInput.addEventListener("keypress", (e) => {
+            if (e.key === 'Enter') {
+                sendBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
